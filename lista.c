@@ -22,7 +22,7 @@ void crear_lista(tLista * l) {
 }
 
 void l_insertar(tLista l, tPosicion p, tElemento e) {
-    if (l->siguiente != NULL && p == NULL) {
+    if (p == NULL) {
         exit(LST_POSICION_INVALIDA);
     }
 
@@ -36,14 +36,99 @@ void l_insertar(tLista l, tPosicion p, tElemento e) {
     p->siguiente = nuevo;
 }
 
+void l_eliminar(tLista l, tPosicion p, void (*fEliminar)(tElemento)) {
+    if (p == NULL || p->siguiente == NULL)
+        exit(LST_POSICION_INVALIDA);
+    tPosicion eliminar = p->siguiente; // guardo la pos a eliminar
+    p->siguiente = eliminar->siguiente;// seteo sig de p, al prox de eliminar
+    eliminar->siguiente = NULL; //desligo al sig
+    fEliminar(eliminar->elemento); //llamo a eliminar del elemento
+    free(eliminar);
+}
+
+void l_destruirAux(tPosicion posicion,void (*fEliminar)(tElemento)) {
+    if (posicion->siguiente == NULL) {
+        fEliminar(posicion->elemento);
+        posicion->elemento = NULL;
+        free(posicion);
+    } else {
+        l_destruirAux(posicion->siguiente, fEliminar);
+        posicion->siguiente = NULL;
+        fEliminar(posicion->elemento);
+        posicion->elemento = NULL;
+        free(posicion);
+    }
+}
+
+void l_destruir(tLista * l, void (*fEliminar)(tElemento)) {
+    tPosicion primera = (*l)->siguiente;
+    if (primera != NULL)
+        l_destruirAux(primera, fEliminar);
+
+    (*l)->siguiente = NULL;
+}
+
+tElemento l_recuperar(tLista l, tPosicion p) {
+    if (p == NULL || p->siguiente == NULL)
+        exit(LST_POSICION_INVALIDA);
+    return p->siguiente->elemento;
+}
+
 tPosicion l_primera(tLista l) {
-    if(l == NULL)
+    if (l == NULL)
         exit(LST_POSICION_INVALIDA);
 
-    tPosicion toret = l->siguiente;
+    return l;
+}
 
-    if (l->siguiente == NULL)
-        toret = l;
+tPosicion l_siguiente(tLista l, tPosicion p) {
+    if (p == NULL || p->siguiente == NULL)
+        exit(LST_NO_EXISTE_SIGUIENTE);
+    return p->siguiente;
+}
 
-    return toret;
+tPosicion l_anterior(tLista l, tPosicion p) {
+    if (p == NULL)
+        exit(LST_POSICION_INVALIDA);
+    if (p == l || p == l->siguiente)
+        exit(LST_NO_EXISTE_ANTERIOR);
+
+    tPosicion auxiliar;
+    while(auxiliar->siguiente != p)
+        auxiliar = auxiliar->siguiente;
+
+    return auxiliar;
+}
+
+tPosicion l_ultima(tLista l) {
+    if (l == NULL)
+        exit(LST_POSICION_INVALIDA);
+
+    tPosicion auxiliar = l;
+    if (l->siguiente != NULL) {
+        while(auxiliar->siguiente->siguiente != NULL)
+            auxiliar = auxiliar->siguiente;
+    }
+    return auxiliar;
+}
+
+tPosicion l_fin(tLista l) {
+    if (l == NULL)
+        exit(LST_POSICION_INVALIDA);
+
+    tPosicion auxiliar = l;
+    while(auxiliar->siguiente != NULL)
+        auxiliar = auxiliar->siguiente;
+
+    return auxiliar;
+}
+
+int l_longitud(tLista l){
+    int size=0;
+    tPosicion auxiliar = l;
+    while(auxiliar->siguiente != NULL){
+        auxiliar=auxiliar->siguiente;
+        size=size+1;
+    }
+    return size;
 }
