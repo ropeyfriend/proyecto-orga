@@ -11,7 +11,9 @@ void crear_mapeo(tMapeo * m, int ci, int (*fHash)(void *), int (*fComparacion)(v
         exit(MAP_ERROR_MEMORIA);
     }
 
-    crear_lista((*m)->tabla_hash);
+    tLista L;
+    crear_lista(&L);
+    (*m)->tabla_hash = &L;
 
     if(ci < 10) {
         (*m)->longitud_tabla = 10;
@@ -27,7 +29,11 @@ tValor m_insertar(tMapeo m, tClave c, tValor v) {
     if (m->cantidad_elementos/ m->longitud_tabla > 0.75 * m->longitud_tabla) {
         printf("is rompido (>factor de carga)\n");
     } else {
-        l_insertar(*m->tabla_hash, l_primera(*m->tabla_hash), v);
+        tEntrada entrada = (tEntrada)malloc(sizeof(entrada));
+        entrada->clave = c;
+        entrada->valor = v;
+
+        l_insertar(*m->tabla_hash, l_primera(*m->tabla_hash), entrada);
         m->cantidad_elementos = m->cantidad_elementos + 1;
     }
 }

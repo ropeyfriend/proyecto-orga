@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include "lista.h"
 #include "lista.c"
+#include "mapeo.c"
 
 int main() {
+    /*
     tLista lista;           //variable
     crear_lista(&lista);    //variable --> celda[elemento: null, siguiente: null]
 
@@ -19,6 +21,18 @@ int main() {
     printf("1: %s \n", l_primera(lista)->siguiente->elemento);
     printf("2: %s \n", l_primera(lista)->siguiente->siguiente->elemento);
     printf("3: %s \n", l_primera(lista)->siguiente->siguiente->siguiente->elemento);
+    */
+
+    tMapeo mapardox;
+    crear_mapeo(&mapardox,10,NULL,NULL);
+    printf("%i \n",mapardox->cantidad_elementos);
+    tClave c = "tincho";
+    tValor v = "tincharda";
+    m_insertar(mapardox,c,v);
+
+    printf("%i \n",mapardox->cantidad_elementos);
+    printf("%s \n",l_primera(mapardox->tabla_hash)->elemento);
+
 
     return 0;
 }
