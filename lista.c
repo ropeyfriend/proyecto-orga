@@ -9,9 +9,6 @@
  * @param l un puntero a una lista
  */
 void crear_lista(tLista * l) {
-    if (l == NULL)
-        exit(LST_POSICION_INVALIDA);
-
     (*l) = (tLista) malloc(sizeof(struct celda));
 
     if ((*l) == NULL)
@@ -22,7 +19,7 @@ void crear_lista(tLista * l) {
 }
 
 void l_insertar(tLista l, tPosicion p, tElemento e) {
-    if (p == NULL) {
+    if (l == NULL || p == NULL) {
         exit(LST_POSICION_INVALIDA);
     }
 
@@ -37,12 +34,13 @@ void l_insertar(tLista l, tPosicion p, tElemento e) {
 }
 
 void l_eliminar(tLista l, tPosicion p, void (*fEliminar)(tElemento)) {
-    if (p == NULL || p->siguiente == NULL)
+    if (l == NULL || p == NULL || p->siguiente == NULL)
         exit(LST_POSICION_INVALIDA);
     tPosicion eliminar = p->siguiente; // guardo la pos a eliminar
     p->siguiente = eliminar->siguiente;// seteo sig de p, al prox de eliminar
-    eliminar->siguiente = NULL; //desligo al sig
     fEliminar(eliminar->elemento); //llamo a eliminar del elemento
+    eliminar->siguiente = NULL; //desligo al sig
+    eliminar->elemento = NULL; //desligo al elem
     free(eliminar);
 }
 
@@ -61,15 +59,21 @@ void l_destruirAux(tPosicion posicion,void (*fEliminar)(tElemento)) {
 }
 
 void l_destruir(tLista * l, void (*fEliminar)(tElemento)) {
+    if (l == NULL)
+        exit(LST_POSICION_INVALIDA);
     tPosicion primera = (*l)->siguiente;
     if (primera != NULL)
         l_destruirAux(primera, fEliminar);
 
     (*l)->siguiente = NULL;
+    (*l)->elemento = NULL;
+    free((*l));
+
+    (*l) = NULL;
 }
 
 tElemento l_recuperar(tLista l, tPosicion p) {
-    if (p == NULL || p->siguiente == NULL)
+    if (l == NULL || p == NULL || p->siguiente == NULL)
         exit(LST_POSICION_INVALIDA);
     return p->siguiente->elemento;
 }
@@ -82,22 +86,18 @@ tPosicion l_primera(tLista l) {
 }
 
 tPosicion l_siguiente(tLista l, tPosicion p) {
-    if (p == NULL || p->siguiente == NULL)
+    if (l == NULL || p == NULL || p->siguiente == NULL || p->siguiente->siguiente == NULL)
         exit(LST_NO_EXISTE_SIGUIENTE);
-    return p->siguiente;
+    return p->siguiente->siguiente;
 }
 
 tPosicion l_anterior(tLista l, tPosicion p) {
-    if (p == NULL)
+    if (p == NULL || l == NULL)
         exit(LST_POSICION_INVALIDA);
-    if (p == l || p == l->siguiente)
+    if (p == l) //Si es el header
         exit(LST_NO_EXISTE_ANTERIOR);
 
-    tPosicion auxiliar;
-    while(auxiliar->siguiente != p)
-        auxiliar = auxiliar->siguiente;
-
-    return auxiliar;
+    return p;
 }
 
 tPosicion l_ultima(tLista l) {
@@ -123,12 +123,17 @@ tPosicion l_fin(tLista l) {
     return auxiliar;
 }
 
-int l_longitud(tLista l){
+int l_longitud(tLista l) {
+    if (l == NULL)
+        exit(LST_POSICION_INVALIDA);
     int size=0;
-    tPosicion auxiliar = l;
-    while(auxiliar->siguiente != NULL){
-        auxiliar=auxiliar->siguiente;
-        size=size+1;
+    if (l->siguiente != NULL) {
+        tPosicion auxiliar = l->siguiente;
+        size = 1;
+        while(auxiliar->siguiente != NULL){
+            auxiliar=auxiliar->siguiente;
+            size=size+1;
+        }
     }
     return size;
 }
