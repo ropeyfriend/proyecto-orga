@@ -31,6 +31,7 @@ void l_insertar(tLista l, tPosicion p, tElemento e) {
     nuevo->elemento = e;
     nuevo->siguiente = p->siguiente;
     p->siguiente = nuevo;
+
 }
 
 void l_eliminar(tLista l, tPosicion p, void (*fEliminar)(tElemento)) {
@@ -81,23 +82,29 @@ tElemento l_recuperar(tLista l, tPosicion p) {
 tPosicion l_primera(tLista l) {
     if (l == NULL)
         exit(LST_POSICION_INVALIDA);
-
+    //devuelve el header
     return l;
 }
 
 tPosicion l_siguiente(tLista l, tPosicion p) {
-    if (l == NULL || p == NULL || p->siguiente == NULL || p->siguiente->siguiente == NULL)
+    if (l == NULL || p == NULL || p->siguiente == NULL)
         exit(LST_NO_EXISTE_SIGUIENTE);
-    return p->siguiente->siguiente;
+    return p->siguiente;
 }
 
-tPosicion l_anterior(tLista l, tPosicion p) {
-    if (p == NULL || l == NULL)
-        exit(LST_POSICION_INVALIDA);
-    if (p == l) //Si es el header
-        exit(LST_NO_EXISTE_ANTERIOR);
+tPosicion l_anterior(tLista l, tPosicion p){
+   int find = 0;
+   tPosicion pos = l;
+   if (p == pos)
+       exit(LST_NO_EXISTE_ANTERIOR);
 
-    return p;
+   while(pos->siguiente != NULL && !find) {
+       if (pos->siguiente == p)
+           find = 1;
+       else
+           pos = pos->siguiente;
+   }
+   return pos;
 }
 
 tPosicion l_ultima(tLista l) {

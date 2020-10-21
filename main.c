@@ -3,55 +3,73 @@
 #include "lista.c"
 #include "mapeo.c"
 
+int fHash(void * p){
+    int * entero = p;
+    int toret = 0;
+
+    if (*entero >= 10)
+        toret = (*entero) / 10;
+    else
+        toret = *entero;
+
+    return toret;
+}
+
+int fComparador(void * a, void * b) {
+    int * pa = a;
+    int * pb = b;
+    int toret = 0;
+
+    if (*pa > *pb)
+        toret = 1;
+    else if (*pa < *pb)
+        toret = -1;
+
+    return toret;
+}
+
 int main() {
-    /*
-    tLista listarda;
-    crear_lista(&listarda);
-
-    int a = 1;
-    int b = 2;
-    int c = 3;
-    int d = 4;
-
-    l_insertar(listarda, listarda, &a);
-    l_insertar(listarda, listarda->siguiente, &b);
-    l_insertar(listarda, listarda->siguiente->siguiente, &c);
-    l_insertar(listarda, listarda->siguiente->siguiente->siguiente, &d);
-
-    int * r1 = listarda->siguiente->elemento;
-    int * r2 = listarda->siguiente->siguiente->elemento;
-    int * r3 = listarda->siguiente->siguiente->siguiente->elemento;
-    int * r4 = listarda->siguiente->siguiente->siguiente->siguiente->elemento;
-
-    printf("%i \n", *r1);
-    printf("%i \n", *r2);
-    printf("%i \n", *r3);
-    printf("%i \n", *r4);
-
-    int * primera = l_primera(listarda)->siguiente->elemento;
-
-
-    printf("\n");
-    printf("%i \n", *primera);
-    */
-
     tMapeo map;
-    crear_mapeo(&map, 10, NULL, NULL);
+    crear_mapeo(&map, 10, fHash, fComparador);
 
     printf("cant elementos: %i \n", map->cantidad_elementos);
 
-    int c = 1;
-    int v = 10;
+    int c1 = 1;
+    int v1 = 10;
 
-    tClave clave;
-    clave = &c;
+    int c2 = 2;
+    int v2 = 20;
 
-    tValor valor = malloc(sizeof(tValor));
-    valor = &v;
+    int c3 = 3;
+    int v3 = 30;
 
-    m_insertar(map, clave, valor);
+    int c4 = 10;
+    int v4 = 11;
 
-    tEntrada * recuperado = (*(map->tabla_hash))->elemento;
+    m_insertar(map, &c1, &v1);
+    m_insertar(map, &c2, &v2);
+    m_insertar(map, &c3, &v3);
+    m_insertar(map, &c4, &v4);
+
+    tValor recuperado1 = m_recuperar(map, (tClave) &c1);
+    tValor recuperado2 = m_recuperar(map, (tClave) &c2);
+    tValor recuperado3 = m_recuperar(map, (tClave) &c3);
+
+    int * p1 = recuperado1;
+    int * p2 = recuperado2;
+    int * p3 = recuperado3;
+
+    printf("%i \n", *p1);
+    printf("%i \n", *p2);
+    printf("%i \n", *p3);
+
+    printf("hc1 %i \n", fHash(&c1));
+
+    printf("cant elementos: %i \n", map->cantidad_elementos);
+
+    printf("\n");
+
+    mostrarBuckets(map);
 
     return 0;
 }
