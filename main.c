@@ -28,48 +28,105 @@ int fComparador(void * a, void * b) {
     return toret;
 }
 
-int main() {
+void fEliminarC(tClave c) {
+    c = NULL;
+    free(c);
+}
+
+void fEliminarV(tValor v) {
+    v = NULL;
+    free(v);
+}
+
+void list_test() {
+    tLista lista;
+    crear_lista(&lista);
+
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    int d = 4;
+
+    l_insertar(lista, l_primera(lista), &d);
+    l_insertar(lista, l_primera(lista), &c);
+    l_insertar(lista, l_primera(lista), &b);
+    l_insertar(lista, l_primera(lista), &a);
+
+    printf("---------------------\n");
+    tPosicion pos = l_siguiente(lista, l_primera(lista));
+    int * entero = pos->elemento;
+    printf("%i \n", *entero);
+    printf("---------------------\n");
+
+    pos = l_primera(lista);
+    while (pos != l_fin(lista)) {
+        int * x = l_recuperar(lista, pos);
+        printf("%i \n", *x);
+        pos = l_siguiente(lista, pos);
+    }
+
+    printf("\n");
+
+    l_eliminar(lista, l_siguiente(lista, l_primera(lista)), fEliminarV);
+
+    pos = l_primera(lista);
+    while (pos != l_fin(lista)) {
+        int * x = l_recuperar(lista, pos);
+        printf("%i \n", *x);
+        pos = l_siguiente(lista, pos);
+    }
+}
+
+void map_test() {
     tMapeo map;
     crear_mapeo(&map, 10, fHash, fComparador);
 
     printf("cant elementos: %i \n", map->cantidad_elementos);
 
     int c1 = 1;
-    int v1 = 10;
+    int v1 = 1;
 
-    int c2 = 2;
-    int v2 = 20;
+    int c2 = 11;
+    int v2 = 11;
 
-    int c3 = 3;
-    int v3 = 30;
+    int c3 = 21;
+    int v3 = 21;
 
-    int c4 = 10;
-    int v4 = 11;
+    int c4 = 100;
+    int v4 = 100;
+
+    int c5 = 10;
+    int v5 = 10;
 
     m_insertar(map, &c1, &v1);
     m_insertar(map, &c2, &v2);
     m_insertar(map, &c3, &v3);
     m_insertar(map, &c4, &v4);
+    m_insertar(map, &c5, &v5);
 
-    tValor recuperado1 = m_recuperar(map, (tClave) &c1);
-    tValor recuperado2 = m_recuperar(map, (tClave) &c2);
-    tValor recuperado3 = m_recuperar(map, (tClave) &c3);
-
-    int * p1 = recuperado1;
-    int * p2 = recuperado2;
-    int * p3 = recuperado3;
-
-    printf("%i \n", *p1);
-    printf("%i \n", *p2);
-    printf("%i \n", *p3);
-
-    printf("hc1 %i \n", fHash(&c1));
+    printf("elementos insertados \n");
 
     printf("cant elementos: %i \n", map->cantidad_elementos);
 
     printf("\n");
 
     mostrarBuckets(map);
+
+    printf("\n");
+    int * valorovich = m_recuperar(map, &c5);
+    printf("valorovich: %i \n", *valorovich);
+
+    printf("\n");
+    m_eliminar(map, &c4, fEliminarC, fEliminarV);
+    m_eliminar(map, &c1, fEliminarC, fEliminarV);
+
+    mostrarBuckets(map);
+
+}
+
+int main() {
+    list_test();
+    //map_test();
 
     return 0;
 }

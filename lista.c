@@ -38,6 +38,7 @@ void l_eliminar(tLista l, tPosicion p, void (*fEliminar)(tElemento)) {
     if (l == NULL || p == NULL || p->siguiente == NULL)
         exit(LST_POSICION_INVALIDA);
     tPosicion eliminar = p->siguiente; // guardo la pos a eliminar
+
     p->siguiente = eliminar->siguiente;// seteo sig de p, al prox de eliminar
     fEliminar(eliminar->elemento); //llamo a eliminar del elemento
     eliminar->siguiente = NULL; //desligo al sig
