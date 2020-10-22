@@ -4,28 +4,34 @@
 
 #define MAP_ERROR_MEMORIA           100
 
-//HAY QUE LIBERAR MEMORIA?????????????????
 void resize(tMapeo m) {
     int longitud_vieja = (int) m->longitud_tabla;
     m->longitud_tabla = (int) m->longitud_tabla * 2;
 
     tLista * nueva = malloc(m->longitud_tabla * sizeof(tLista));
-    for(int i = 0; i < m->longitud_tabla; i++)
-        crear_lista(m->tabla_hash + i);
+    for(int i = 0; i < m->longitud_tabla; i++) {
+        crear_lista(nueva + i);
+    }
 
     for(int i = 0; i < longitud_vieja; i++) {
-        tLista lista = *(m->tabla_hash) + i;
+        tLista lista = *(m->tabla_hash + i);
         tPosicion pos = l_primera(lista);
-
         while(pos != l_fin(lista)) {
             tEntrada e = (tEntrada) l_recuperar(lista, pos);
-            int bucket = m->hash_code(e->clave);
-            l_insertar(*(nueva + bucket), l_primera(*(nueva+bucket)), e);
+            int bucket = m->hash_code(e->clave) % m->longitud_tabla;
+            l_insertar(*(nueva + bucket), l_fin(*(nueva+bucket)), e);
+            pos = l_siguiente(lista, pos);
         }
+
+        lista->siguiente = NULL;
+        lista->elemento = NULL;
+        lista = NULL;
+        free(lista);
     }
 
     m->tabla_hash = nueva;
 }
+
 /**
  Inicializa un mapeo vac�o, con capacidad inicial igual al MAX(10, CI).
  Una referencia al mapeo creado es referenciada en *M.
@@ -34,7 +40,9 @@ void resize(tMapeo m) {
  Finaliza indicando MAP_ERROR_MEMORIA si no es posible reservar memoria correspondientemente.
 **/
 void crear_mapeo(tMapeo *m, int ci, int (*fHash)(void *), int (*fComparacion)(void *, void *)) {
+    //printf("------MALLOC-CREAR-MAPEO------- \n");
     (*m) = (tMapeo) malloc(sizeof(struct entrada));
+
     if (*m == NULL)
         exit(MAP_ERROR_MEMORIA);
 
@@ -83,9 +91,13 @@ tValor m_insertar(tMapeo m, tClave c, tValor v) {
     }
 
     if (!find) {
-        if (m->cantidad_elementos / m->longitud_tabla >= 0.75) {
-            //resize()
+        if ((m->cantidad_elementos + 1.0 ) / m->longitud_tabla >= 0.75) {
+            printf("RESIZE \n");
+            resize(m);
+            bucket = m->hash_code(c) % m->longitud_tabla;
+            lista = *(m->tabla_hash + bucket);
         }
+
         tEntrada entrada = (tEntrada) malloc(sizeof(struct entrada));
         if (entrada == NULL)
             exit(MAP_ERROR_MEMORIA);
@@ -93,7 +105,10 @@ tValor m_insertar(tMapeo m, tClave c, tValor v) {
         entrada->clave = c;
         entrada->valor = v;
 
-        l_insertar(lista, l_primera(lista), entrada);
+        printf("adding: [%i][%i] en bucket %i \n", *((int* ) c), *((int*) v), bucket);
+
+        l_insertar(lista, l_fin(lista), entrada);
+
         m->cantidad_elementos++;
     }
 
@@ -104,6 +119,7 @@ void m_eliminar_entrada(tElemento entrada) {
     entrada = NULL;
     free(entrada);
 }
+
 /**
  Elimina la entrada con clave C en M, si esta existe.
  La clave y el valor de la entrada son eliminados mediante las funciones fEliminarC y fEliminarV.
@@ -122,9 +138,41 @@ void m_eliminar(tMapeo m, tClave c, void (*fEliminarC)(void *), void (*fEliminar
             int * valor = e->valor;
             printf("removing: [%i , %i] \n", *clave, *valor);
             l_eliminar(lista, pos, m_eliminar_entrada);
+            m->cantidad_elementos--;
             find = 1;
         } else
             pos = l_siguiente(lista, pos);
+    }
+}
+
+/**
+ Destruye el mapeo M, elimininando cada una de sus entradas.
+ Las claves y valores almacenados en las entradas son eliminados mediante las funciones fEliminarC y fEliminarV.
+**/
+void m_destruir(tMapeo * m, void (*fEliminarC)(void *), void (*fEliminarV)(void *)) {
+    for (int i = 0; i < (*m)->longitud_tabla; i++) {
+        tLista lista = *((*m)->tabla_hash + i);
+        tPosicion pos = l_primera(lista);
+        int final = 0;
+
+        while(final == 0 && pos != l_fin(lista)) {
+            tEntrada entrada = (tEntrada) l_recuperar(lista, pos);
+            int * clave = entrada->clave;
+            int * valor = entrada->valor;
+
+            fEliminarC(entrada->clave);
+            fEliminarV(entrada->valor);
+            l_eliminar(lista, pos, m_eliminar_entrada);
+
+            (*m)->cantidad_elementos--;
+            if (pos == l_fin(lista))
+                final = 1;
+        }
+        lista->siguiente = NULL;
+        lista->elemento = NULL;
+        //free(lista);
+        printf("------FREE-DESTRUIR-LISTA-EN-MAPEO------- \n");
+        printf("\n");
     }
 }
 
@@ -160,7 +208,6 @@ void mostrarBuckets(tMapeo m) {
         tPosicion pos = l_primera(lista);
         while (pos != l_fin(lista)) {
             tEntrada e = (tEntrada) l_recuperar(lista, pos);
-
             int * c = (int *) (e)->clave;
             int * v = (int *) (e)->valor;
             printf("[c:%i v:%i] | ", *c, *v);

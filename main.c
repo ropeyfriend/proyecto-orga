@@ -3,6 +3,12 @@
 #include "lista.c"
 #include "mapeo.c"
 
+/*
+ * 1) memoria is ok? metodo insertar, destruir, eliminar y resize de mapeo y lista
+ * 2) WARNING mapeo: Clang-Tidy: Narrowing conversion from 'unsigned int' to signed type 'int' is implementation-defined
+ * 3) funciona como deberia?
+ */
+
 int fHash(void * p){
     int * entero = p;
     int toret = 0;
@@ -30,51 +36,70 @@ int fComparador(void * a, void * b) {
 
 void fEliminarC(tClave c) {
     c = NULL;
+    printf("------FREE-ELIMINAR-CLAVE------- \n");
     free(c);
 }
 
 void fEliminarV(tValor v) {
     v = NULL;
+    printf("------FREE-ELIMINAR-VALOR------- \n");
     free(v);
+}
+
+void fEliminarEntero(void * entero) {
+    entero = NULL;
+    printf("------FREE-ELIMINAR-ENTERO------- \n");
+    free(entero);
 }
 
 void list_test() {
     tLista lista;
     crear_lista(&lista);
 
-    int a = 1;
-    int b = 2;
-    int c = 3;
-    int d = 4;
+    int *a = malloc(sizeof(int));
+    int *b = malloc(sizeof(int));
+    int *c = malloc(sizeof(int));
+    int *d = malloc(sizeof(int));
+    printf("------MALLOC-ENTERO------- \n");
+    printf("------MALLOC-ENTERO------- \n");
+    printf("------MALLOC-ENTERO------- \n");
+    printf("------MALLOC-ENTERO------- \n");
 
-    l_insertar(lista, l_primera(lista), &d);
-    l_insertar(lista, l_primera(lista), &c);
-    l_insertar(lista, l_primera(lista), &b);
-    l_insertar(lista, l_primera(lista), &a);
+    *a = 1;
+    *b = 2;
+    *c = 3;
+    *d = 4;
 
-    printf("---------------------\n");
-    tPosicion pos = l_siguiente(lista, l_primera(lista));
-    int * entero = pos->elemento;
-    printf("%i \n", *entero);
-    printf("---------------------\n");
-
-    pos = l_primera(lista);
-    while (pos != l_fin(lista)) {
-        int * x = l_recuperar(lista, pos);
-        printf("%i \n", *x);
-        pos = l_siguiente(lista, pos);
-    }
+    l_insertar(lista, l_fin(lista), a);
+    l_insertar(lista, l_fin(lista), b);
+    l_insertar(lista, l_fin(lista), c);
+    l_insertar(lista, l_fin(lista), d);
 
     printf("\n");
+    printf("----------------------- \n");
+    tPosicion pos = l_primera(lista);
+    while (pos != l_fin(lista)) {
+        int * x = l_recuperar(lista, pos);
+        printf("%i ", *x);
+        pos = l_siguiente(lista, pos);
+    }
+    printf("-eolist\n");
+    printf("------------------------ \n");
+    printf("\n");
 
-    l_eliminar(lista, l_siguiente(lista, l_primera(lista)), fEliminarV);
+    l_destruir(&lista, fEliminarEntero);
 
+    printf("\n");
+    printf("\n ----------------------- \n");
     pos = l_primera(lista);
     while (pos != l_fin(lista)) {
         int * x = l_recuperar(lista, pos);
-        printf("%i \n", *x);
+        printf("%i ", *x);
         pos = l_siguiente(lista, pos);
     }
+    printf("-eolist\n");
+    printf("----------------------- \n");
+    printf("\n");
 }
 
 void map_test() {
@@ -98,35 +123,53 @@ void map_test() {
     int c5 = 10;
     int v5 = 10;
 
+    int c6 = 1000;
+    int v6 = 101;
+
+    int c7 = 10000;
+    int v7 = 102;
+
+    int c8 = 10000; //repetido
+    int v8 = 130;
+
+    int c9 = 1500;
+    int v9 = 150;
+
+
     m_insertar(map, &c1, &v1);
     m_insertar(map, &c2, &v2);
     m_insertar(map, &c3, &v3);
     m_insertar(map, &c4, &v4);
     m_insertar(map, &c5, &v5);
-
-    printf("elementos insertados \n");
+    m_insertar(map, &c6, &v6);
+    m_insertar(map, &c7, &v7);
+    m_insertar(map, &c8, &v8);
+    m_insertar(map, &c9, &v9);
 
     printf("cant elementos: %i \n", map->cantidad_elementos);
-
+    printf("longitud tabla: %i \n", map->longitud_tabla);
     printf("\n");
-
     mostrarBuckets(map);
-
+    printf("cant elementos: %i \n", map->cantidad_elementos);
     printf("\n");
-    int * valorovich = m_recuperar(map, &c5);
-    printf("valorovich: %i \n", *valorovich);
 
+    /*
     printf("\n");
     m_eliminar(map, &c4, fEliminarC, fEliminarV);
     m_eliminar(map, &c1, fEliminarC, fEliminarV);
+    */
 
+
+    m_destruir(&map, fEliminarC, fEliminarV);
+
+    printf("\n");
     mostrarBuckets(map);
+    printf("cant elementos: %i \n", map->cantidad_elementos);
 
 }
 
 int main() {
-    list_test();
-    //map_test();
-
+    //list_test();
+    map_test();
     return 0;
 }

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "lista.h"
 
 /**
  * Crea una lista con centinela
@@ -10,6 +9,7 @@
  */
 void crear_lista(tLista * l) {
     (*l) = (tLista) malloc(sizeof(struct celda));
+    printf("------MALLOC-CREAR_LISTA------- \n");
 
     if ((*l) == NULL)
         exit(LST_ERROR_MEMORIA);
@@ -24,7 +24,7 @@ void l_insertar(tLista l, tPosicion p, tElemento e) {
     }
 
     tPosicion nuevo = (tPosicion) malloc(sizeof(struct celda));
-
+    printf("------MALLOC-INSERTAR_POSICION-LISTA------- \n");
     if (nuevo == NULL)
         exit(LST_ERROR_MEMORIA);
 
@@ -43,6 +43,7 @@ void l_eliminar(tLista l, tPosicion p, void (*fEliminar)(tElemento)) {
     fEliminar(eliminar->elemento); //llamo a eliminar del elemento
     eliminar->siguiente = NULL; //desligo al sig
     eliminar->elemento = NULL; //desligo al elem
+    printf("------FREE-ELIMINAR-POSICION-LISTA------- \n");
     free(eliminar);
 }
 
@@ -50,12 +51,14 @@ void l_destruirAux(tPosicion posicion,void (*fEliminar)(tElemento)) {
     if (posicion->siguiente == NULL) {
         fEliminar(posicion->elemento);
         posicion->elemento = NULL;
+        printf("------FREE-DESTRUIR-POSICION-LISTA------- \n");
         free(posicion);
     } else {
         l_destruirAux(posicion->siguiente, fEliminar);
         posicion->siguiente = NULL;
         fEliminar(posicion->elemento);
         posicion->elemento = NULL;
+        printf("------FREE-DESTRUIR-POSICION-LISTA------- \n");
         free(posicion);
     }
 }
@@ -66,12 +69,11 @@ void l_destruir(tLista * l, void (*fEliminar)(tElemento)) {
     tPosicion primera = (*l)->siguiente;
     if (primera != NULL)
         l_destruirAux(primera, fEliminar);
-
+    //(*l) = NULL;
     (*l)->siguiente = NULL;
     (*l)->elemento = NULL;
-    free((*l));
-
-    (*l) = NULL;
+    //free(*l);
+    printf("------FREE-DESTRUIR-LISTA------- \n");
 }
 
 tElemento l_recuperar(tLista l, tPosicion p) {
