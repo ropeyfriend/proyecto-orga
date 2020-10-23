@@ -3,21 +3,14 @@
 #include "lista.c"
 #include "mapeo.c"
 
-/*
- * 1) memoria is ok? metodo insertar, destruir, eliminar y resize de mapeo y lista
- * 2) WARNING mapeo: Clang-Tidy: Narrowing conversion from 'unsigned int' to signed type 'int' is implementation-defined
- * 3) funciona como deberia?
- */
-
-int fHash(void * p){
+int fHash(void * p) {
     int * entero = p;
-    int toret = 0;
+    int toret;
 
     if (*entero >= 10)
         toret = (*entero) / 10;
     else
         toret = *entero;
-
     return toret;
 }
 
@@ -36,13 +29,13 @@ int fComparador(void * a, void * b) {
 
 void fEliminarC(tClave c) {
     c = NULL;
-    printf("------FREE-ELIMINAR-CLAVE------- \n");
+    //printf("------FREE-ELIMINAR-CLAVE------- \n");
     free(c);
 }
 
 void fEliminarV(tValor v) {
     v = NULL;
-    printf("------FREE-ELIMINAR-VALOR------- \n");
+    //printf("------FREE-ELIMINAR-VALOR------- \n");
     free(v);
 }
 
@@ -50,6 +43,23 @@ void fEliminarEntero(void * entero) {
     entero = NULL;
     printf("------FREE-ELIMINAR-ENTERO------- \n");
     free(entero);
+}
+
+void mostrarBuckets(tMapeo m) {
+    for (int bucket = 0; bucket < m->longitud_tabla; bucket++) {
+        tLista lista = *(m->tabla_hash + bucket);
+
+        tPosicion pos = l_primera(lista);
+        while (pos != l_fin(lista)) {
+            tEntrada e = (tEntrada) l_recuperar(lista, pos);
+            int * c = (int *) (e)->clave;
+            int * v = (int *) (e)->valor;
+            printf("[c:%i v:%i] | ", *c, *v);
+
+            pos = l_siguiente(lista, pos);
+        }
+        printf("-eolist \n");
+    }
 }
 
 void list_test() {
@@ -60,10 +70,10 @@ void list_test() {
     int *b = malloc(sizeof(int));
     int *c = malloc(sizeof(int));
     int *d = malloc(sizeof(int));
-    printf("------MALLOC-ENTERO------- \n");
-    printf("------MALLOC-ENTERO------- \n");
-    printf("------MALLOC-ENTERO------- \n");
-    printf("------MALLOC-ENTERO------- \n");
+    //printf("------MALLOC-ENTERO------- \n");
+    //printf("------MALLOC-ENTERO------- \n");
+    //printf("------MALLOC-ENTERO------- \n");
+    //printf("------MALLOC-ENTERO------- \n");
 
     *a = 1;
     *b = 2;
@@ -88,6 +98,7 @@ void list_test() {
     printf("\n");
 
     l_destruir(&lista, fEliminarEntero);
+    printf("l_destruir() \n");
 
     printf("\n");
     printf("\n ----------------------- \n");
@@ -130,7 +141,7 @@ void map_test() {
     int v7 = 102;
 
     int c8 = 10000; //repetido
-    int v8 = 130;
+    int v8 = 1480;
 
     int c9 = 1500;
     int v9 = 150;
@@ -159,9 +170,8 @@ void map_test() {
     m_eliminar(map, &c1, fEliminarC, fEliminarV);
     */
 
-
     m_destruir(&map, fEliminarC, fEliminarV);
-
+    printf("m_destruir() \n");
     printf("\n");
     mostrarBuckets(map);
     printf("cant elementos: %i \n", map->cantidad_elementos);
