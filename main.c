@@ -3,7 +3,9 @@
 #include "lista.c"
 #include "mapeo.c"
 #include <string.h>
-#include <ctype.h>
+
+#define ERROR_ARCHIVO -1
+#define ERROR_INVOCACION -2
 
 int fHash(void * p) {
     char * palabra = (char *) p;
@@ -19,16 +21,10 @@ int fHash(void * p) {
 }
 
 int fComparador(void * a, void * b) {
-    int * pa = a;
-    int * pb = b;
-    int toret = 0;
-
-    if (*pa > *pb)
-        toret = 1;
-    else if (*pa < *pb)
-        toret = -1;
-
-    return toret;
+  char *string1 = a;
+  char *string2 = b;
+  int toret = strcmp(string1, string2);
+  return toret;
 }
 
 void fEliminarC(tClave c) {
@@ -56,7 +52,7 @@ void mostrarBuckets(tMapeo m) {
         tPosicion pos = l_primera(lista);
         while (pos != l_fin(lista)) {
             tEntrada e = (tEntrada) l_recuperar(lista, pos);
-            char * c = (char *) (e)->clave;
+            char * c = (e)->clave;
             int * v = (int *) (e)->valor;
             printf("[c:%s v:%i] | ", c, *v);
 
@@ -182,86 +178,56 @@ void map_test() {
 
 }
 
-int sumarAscii(char palabra[20]);
-void contarPalabras(tMapeo M, char ruta[20]);
-int verificarComando(char comando[20]);
+void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
+   FILE *archivo = fopen(file,"r");
 
-int sumarAscii(char palabra[20]) {
+   if (archivo == NULL) {
+       printf("El archivo no se pudo abrir correctamente \n");
+       exit(ERROR_ARCHIVO);
+   }
+   char buffer[100];
+   char delimitadores[] = " ,.¿?¡!\n\0";
+   char * palabras_separadas;
+   int * valor;
+   char * linea = fgets(buffer, 100, archivo);
 
+   while (linea != NULL) {
+       palabras_separadas = strtok(linea, delimitadores);
 
+       while(palabras_separadas != NULL) {
+           char * palabra;
+           palabra = strdup(palabras_separadas); //hace malloc?
+           valor = m_recuperar(m, palabra);
+
+           if (valor == NULL) {
+               int * nuevo_valor = malloc(sizeof(int));
+               *nuevo_valor = 1;
+               m_insertar(m, palabra, nuevo_valor);
+           } else {
+               *valor = *(valor) + 1;
+           }
+           palabras_separadas = strtok(NULL, delimitadores);
+       }
+       linea = fgets(buffer, 100, archivo);
+   }
+
+   fclose(archivo);
 }
 
-void contarPalabras(tMapeo M, char ruta[20]) {
-    char palabra[20];
-    char rutaCompleta [60];
-    char ruta2 [] = "D:\\OLC\\proyecto-orga\\";
-    strcpy(rutaCompleta, ruta2);
-    strcat(rutaCompleta, ruta);
-
-    FILE * archivo = fopen(rutaCompleta, "r");
-
-    fflush(stdin);
-    if (archivo == NULL) {
-        printf("Error de apertura del archivo. \n");
-    } else {
-        char c;
-        memset(palabra, 0, strlen(palabra));
-        while (!feof(archivo)) {
-            int cont = 0;
-            while((c = fgetc(archivo)) != EOF) {
-
-                if(c == ' ' || c == '.' || c == '\n') {
-                    cont = 0;
-
-                    for(int i = 0; palabra[i]; i++){
-                        palabra[i] = tolower(palabra[i]); // Pasa las mayusculas de las palabras a minusculas
-                    }
-
-                    tClave clave = malloc(20 * sizeof(char));
-                    clave = palabra;
-                    printf("Clave : %s\n",clave);
-
-                    if(m_recuperar(M,&clave) == NULL) {
-                        printf("ESTOY ADENTRO DEL IFARDO DEL NULL\n");
-                        int valor = 1;
-                        m_insertar(M,&clave,(tValor) &valor); // Si la palabra no estaba, ingresa al mapeo con cantidad 1
-                        printf("Despues del insertar\n");
-                    } else {
-                        printf("ESTOY ADENTRO DEL IFARDO DEL ELSE\n");
-                        int * nuevoValor = (int *) m_recuperar(M,&clave); // Si la palabra ya estaba, incrementa la cantidad en 1
-                        m_insertar(M,&clave,(tValor) nuevoValor+1);
-                    }
-
-                    memset(palabra, 0, strlen(palabra)); // Borra la palabra
-                } else {
-                    palabra[cont] = c;
-                    cont++;
-                }
-            }
-        }
-    }
-    fclose(archivo);
-}
 
 int verificarComando(char comando[20]) {
     int corte = 0;
-    if(comando[0] != '$' || comando[1] != ' ' ||comando[2] != 'e' || comando[3] != 'v'
-       || comando[4] != 'a' || comando[5] != 'l'
-       || comando[6] != 'u' || comando[7] != 'a' || comando[8] != 'd' || comando[9] != 'o'
-       || comando[10] != 'r' || comando[11] != ' ') {
+    if (strcmp(comando, "$ evaluador") != 0)
         corte = 1;
+    else {
+        printf("No se reconoce el comando \n");
+        exit(ERROR_INVOCACION);
     }
     return corte;
 }
 
-int main() {
-    //list_test();
-    //map_test();
-
-    int cantidadApariciones = 0;
-    int operacion = 0;
+void checkComando() {
     char comando[20];
-    char palabra[20];
     char ruta [20];
     fflush(stdin);
     printf("Ingrese comando del sistema. \n");
@@ -282,15 +248,13 @@ int main() {
     ruta[j] = 't';
     ruta[j+1] = 'x';
     ruta[j+2] = 't';
+}
 
+int main() {
+    checkComando();
     tMapeo M;
     crear_mapeo(&M,10, fHash, fComparador);
-    contarPalabras(M, ruta);
-
-    // printf("Ingrese la palabra que desea buscar : \n");
-    // scanf("%[^\n]", palabra);
-    // printf("%s\n", palabra);
-
+    cargarPalabrasEnMapeo(M, "C:\\UNS\\orga\\proyecto-orga\\headerlista.txt");
     mostrarBuckets(M);
 
     //int clave = sumarAscii(palabra);
