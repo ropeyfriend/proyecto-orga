@@ -6,14 +6,16 @@
 #include <ctype.h>
 
 int fHash(void * p) {
-    int * entero = p;
-    int toret;
+    char * palabra = (char *) p;
+    int letraAscii;
+    int sumaAscii = 0;
 
-    if (*entero >= 10)
-        toret = (*entero) / 10;
-    else
-        toret = *entero;
-    return toret;
+    for(int i=0; i<strlen(palabra); i++) {
+        letraAscii = (int) palabra[i];
+        sumaAscii += letraAscii + i;
+    }
+
+    return sumaAscii;
 }
 
 int fComparador(void * a, void * b) {
@@ -54,9 +56,9 @@ void mostrarBuckets(tMapeo m) {
         tPosicion pos = l_primera(lista);
         while (pos != l_fin(lista)) {
             tEntrada e = (tEntrada) l_recuperar(lista, pos);
-            int * c = (int *) (e)->clave;
+            char * c = (char *) (e)->clave;
             int * v = (int *) (e)->valor;
-            printf("[c:%i v:%i] | ", *c, *v);
+            printf("[c:%s v:%i] | ", c, *v);
 
             pos = l_siguiente(lista, pos);
         }
@@ -186,17 +188,8 @@ int verificarComando(char comando[20]);
 
 int sumarAscii(char palabra[20]) {
 
-    int letraAscii;
-    int sumaAscii = 0;
 
-    for(int i=0; i<strlen(palabra); i++) {
-        letraAscii = (int) palabra[i];
-        sumaAscii += letraAscii + i;
-    }
-
-    return sumaAscii;
 }
-
 
 void contarPalabras(tMapeo M, char ruta[20]) {
     char palabra[20];
@@ -224,21 +217,19 @@ void contarPalabras(tMapeo M, char ruta[20]) {
                         palabra[i] = tolower(palabra[i]); // Pasa las mayusculas de las palabras a minusculas
                     }
 
-                    int clave = sumarAscii(palabra);
-                    printf("Clave : %i\n",clave);
-                    printf("Palabra : %s\n",palabra);
-                    int * insertado;
+                    tClave clave = malloc(20 * sizeof(char));
+                    clave = palabra;
+                    printf("Clave : %s\n",clave);
 
                     if(m_recuperar(M,&clave) == NULL) {
+                        printf("ESTOY ADENTRO DEL IFARDO DEL NULL\n");
                         int valor = 1;
-                        insertado = (int *) m_insertar(M,&clave,&valor); // Si la palabra no estaba, ingresa al mapeo con cantidad 1
-                        printf("Inserto por primera vez : %s\n",palabra);
-                        printf("Insertado = %i\n",*insertado);
+                        m_insertar(M,&clave,(tValor) &valor); // Si la palabra no estaba, ingresa al mapeo con cantidad 1
+                        printf("Despues del insertar\n");
                     } else {
-                        tValor nuevoValor = m_recuperar(M,&clave); // Si la palabra ya estaba, incrementa la cantidad en 1
-                        insertado = (int *) m_insertar(M,&clave,nuevoValor+1);
-                        printf("Inserto otra vez : %s\n",palabra);
-                        printf("Insertado = %i\n",*insertado);
+                        printf("ESTOY ADENTRO DEL IFARDO DEL ELSE\n");
+                        int * nuevoValor = (int *) m_recuperar(M,&clave); // Si la palabra ya estaba, incrementa la cantidad en 1
+                        m_insertar(M,&clave,(tValor) nuevoValor+1);
                     }
 
                     memset(palabra, 0, strlen(palabra)); // Borra la palabra
@@ -296,16 +287,18 @@ int main() {
     crear_mapeo(&M,10, fHash, fComparador);
     contarPalabras(M, ruta);
 
-    printf("Ingrese la palabra que desea buscar : \n");
-    scanf("%[^\n]", palabra);
-    printf("%s\n", palabra);
+    // printf("Ingrese la palabra que desea buscar : \n");
+    // scanf("%[^\n]", palabra);
+    // printf("%s\n", palabra);
 
-    int clave = sumarAscii(palabra);
-    printf("%i\n",clave);
+    mostrarBuckets(M);
 
-    int * valor = (int *) m_recuperar(M,&clave);
+    //int clave = sumarAscii(palabra);
+    //printf("%i\n",clave);
 
-    printf("Cantidad apariciones : %i\n",*valor);
+    //int * valor = (int *) m_recuperar(M,&clave);
+
+    //printf("Cantidad apariciones : %i\n",*valor);
 
 
     /*
