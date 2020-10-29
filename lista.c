@@ -4,14 +4,11 @@
 #include "lista.h"
 
 /**
- * Crea una lista con centinela
- * Si l es NULL interrumpe la ejecucion con un codigo LST_POSICION_INVALIDA (3)
- * Si la posicion en memoria a la que apunta l es NULL interrumpe la ejecucion con un codigo LST_ERROR_MEMORIA (4)
- * @param l un puntero a una lista
+ * Inicializa una lista vacía con posición indirecta y celda centinela (header)
+ * @param l es un puntero a la lista
  */
 void crear_lista(tLista * l) {
     (*l) = (tLista) malloc(sizeof(struct celda));
-    //printf("------MALLOC-CREAR_LISTA------- \n");
 
     if ((*l) == NULL)
         exit(LST_ERROR_MEMORIA);
@@ -20,13 +17,18 @@ void crear_lista(tLista * l) {
     (*l)->siguiente = NULL;
 }
 
+/**
+ * Inserta un elemento a la lista en una posición específica
+ * @param l una lista
+ * @param p una posición a insertar el elemento
+ * @param e un elemento a insertar
+ */
 void l_insertar(tLista l, tPosicion p, tElemento e) {
     if (l == NULL || p == NULL) {
         exit(LST_POSICION_INVALIDA);
     }
 
     tPosicion nuevo = (tPosicion) malloc(sizeof(struct celda));
-    //printf("------MALLOC-INSERTAR_POSICION-LISTA------- \n");
     if (nuevo == NULL)
         exit(LST_ERROR_MEMORIA);
 
@@ -35,58 +37,78 @@ void l_insertar(tLista l, tPosicion p, tElemento e) {
     p->siguiente = nuevo;
 }
 
+/**
+ * Dada una posicion elimina el elemento de la lista en esa posición
+ * @param l Una lista
+ * @param p Una posición de la lista
+ * @param fEliminar La función escpecífica para eliminar elementos de la lista
+ */
 void l_eliminar(tLista l, tPosicion p, void (*fEliminar)(tElemento)) {
     if (l == NULL || p == NULL || p->siguiente == NULL)
         exit(LST_POSICION_INVALIDA);
-    tPosicion eliminar = p->siguiente; // guardo la pos a eliminar
 
-    p->siguiente = eliminar->siguiente;// seteo sig de p, al prox de eliminar
-    fEliminar(eliminar->elemento); //llamo a eliminar del elemento
+    tPosicion posEliminar = p->siguiente;
 
-    eliminar->siguiente = NULL; //desligo al sig
-    eliminar->elemento = NULL; //desligo al elem
-    eliminar = NULL;
-    //printf("------FREE-ELIMINAR-POSICION-LISTA------- \n");
-    free(eliminar);
+    p->siguiente = posEliminar->siguiente;
+    fEliminar(posEliminar->elemento);
+
+    posEliminar->siguiente = NULL;
+    posEliminar->elemento = NULL;
+    posEliminar = NULL;
+    free(posEliminar);
 }
 
-void l_destruirAux(tPosicion posicion,void (*fEliminar)(tElemento)) {
-    if (posicion->siguiente == NULL) {
-        fEliminar(posicion->elemento);
-        posicion->elemento = NULL;
-        posicion = NULL;
-        //printf("------FREE-DESTRUIR-POSICION-LISTA------- \n");
-        free(posicion);
-    } else {
-        l_destruirAux(posicion->siguiente, fEliminar);
-        posicion->siguiente = NULL;
-        fEliminar(posicion->elemento);
-        posicion->elemento = NULL;
-        posicion = NULL;
-        //printf("------FREE-DESTRUIR-POSICION-LISTA------- \n");
-        free(posicion);
-    }
+/**
+ * Función auxiliar recursiva que dada una posición se encarga de eliminar todos los elementos de una lista
+ * @param pos La primer posición de una lista
+ * @param fEliminar La función escpecífica para eliminar elementos de la lista
+ */
+void destruir_aux(tPosicion pos, void (*fEliminar)(tElemento)) {
+    if (pos->siguiente != NULL)
+        destruir_aux(pos->siguiente, fEliminar);
+    fEliminar(pos->elemento);
+    pos->elemento = NULL;
+    pos->siguiente = NULL;
+    free(pos);
 }
 
+/**
+ * Destruye la lista, eliminando todas sus posiciones.
+ * @param l La lista a eliminar
+ * @param fEliminar La función escpecífica para eliminar elementos de la lista
+ */
 void l_destruir(tLista * l, void (*fEliminar)(tElemento)) {
     if (l == NULL)
         exit(LST_POSICION_INVALIDA);
-    tPosicion primera = (*l)->siguiente;
-    if (primera != NULL)
-        l_destruirAux(primera, fEliminar);
+
+    tPosicion pos = (*l);
+    if (pos->siguiente != NULL)
+        destruir_aux(pos->siguiente, fEliminar);
+
+    //header
     (*l)->siguiente = NULL;
     (*l)->elemento = NULL;
-    (*l) = NULL;
     free(*l);
-    //printf("------FREE-DESTRUIR-LISTA------- \n");
+    (*l) = NULL;
 }
 
+/**
+ * Devuelve el elemento de la posición indicada en la lista.
+ * @param l La lista que contiene la posición
+ * @param p Una posición de la lista
+ * @return El elemento en la posición
+ */
 tElemento l_recuperar(tLista l, tPosicion p) {
     if (l == NULL || p == NULL || p->siguiente == NULL)
         exit(LST_POSICION_INVALIDA);
     return p->siguiente->elemento;
 }
 
+/**
+ * Devuelve la primer posición de la lista
+ * @param l La lista
+ * @return La primer posición
+ */
 tPosicion l_primera(tLista l) {
     if (l == NULL)
         exit(LST_POSICION_INVALIDA);
@@ -94,13 +116,25 @@ tPosicion l_primera(tLista l) {
     return l;
 }
 
+/**
+ * Devuelve la posición que le sigue a la indicada por parámetro
+ * @param l La lista
+ * @param p La posición
+ * @return La siguiente posición a la indicada por parámetro
+ */
 tPosicion l_siguiente(tLista l, tPosicion p) {
     if (l == NULL || p == NULL || p->siguiente == NULL)
         exit(LST_NO_EXISTE_SIGUIENTE);
     return p->siguiente;
 }
 
-tPosicion l_anterior(tLista l, tPosicion p){
+/**
+ * Devuelve la posición anterior a la indicada por parámetro
+ * @param l La lista
+ * @param p La posición
+ * @return La posición anterior a la indicada por parámetro
+ */
+tPosicion l_anterior(tLista l, tPosicion p) {
     int find = 0;
     tPosicion pos = l;
     if (p == pos)
@@ -115,6 +149,11 @@ tPosicion l_anterior(tLista l, tPosicion p){
     return pos;
 }
 
+/**
+ * Devuelve la última posición de la lista
+ * @param l La lista
+ * @return La última posición
+ */
 tPosicion l_ultima(tLista l) {
     if (l == NULL)
         exit(LST_POSICION_INVALIDA);
@@ -127,6 +166,11 @@ tPosicion l_ultima(tLista l) {
     return auxiliar;
 }
 
+/**
+ * Devuelve la posición final de la lista
+ * @param l La lista
+ * @return La posición final
+ */
 tPosicion l_fin(tLista l) {
     if (l == NULL)
         exit(LST_POSICION_INVALIDA);
@@ -137,7 +181,11 @@ tPosicion l_fin(tLista l) {
 
     return auxiliar;
 }
-
+/**
+ * Devuelve la longitud de la lista
+ * @param l La lista
+ * @return La longitud de la lista
+ */
 int l_longitud(tLista l) {
     if (l == NULL)
         exit(LST_POSICION_INVALIDA);

@@ -4,32 +4,55 @@
 
 #define MAP_ERROR_MEMORIA           100
 
+//Prototipos de funciones globales
+void (*fEliminar_clave_global)(void *);
+void (*fEliminar_valor_global)(void *);
+
+/**
+ * Dada una entrada elimina sus claves y valores haciendo uso de las funciones específicas para eliminarlos
+ * @param entrada
+ */
+void fEliminar_entrada(tElemento entrada) {
+    tEntrada e = (tEntrada) entrada;
+
+    fEliminar_clave_global(e->clave);
+    fEliminar_valor_global(e->valor);
+
+    entrada = NULL;
+    free(entrada);
+}
+
+/**
+ * Multiplica por 2 el tamaño de la tabla hash del mapeo
+ * @param m El mapeo
+ */
 void rehash(tMapeo m) {
     int longitud_vieja = (int) m->longitud_tabla;
-    m->longitud_tabla = (int) m->longitud_tabla * 2;
+    m->longitud_tabla = (int) m->longitud_tabla * 2; //actualizo el valor
+    tLista lista;
 
-    tLista * nueva = malloc(m->longitud_tabla * sizeof(tLista));
+    tLista * nuevaTabla = malloc(m->longitud_tabla * sizeof(struct celda));
     for(int i = 0; i < m->longitud_tabla; i++) {
-        crear_lista(nueva + i);
+        crear_lista(nuevaTabla + i);
     }
 
     for(int i = 0; i < longitud_vieja; i++) {
-        tLista lista = *(m->tabla_hash + i);
+        lista = *(m->tabla_hash + i);
         tPosicion pos = l_primera(lista);
         while(pos != l_fin(lista)) {
             tEntrada e = (tEntrada) l_recuperar(lista, pos);
             int bucket = m->hash_code(e->clave) % m->longitud_tabla;
-            l_insertar(*(nueva + bucket), l_fin(*(nueva+bucket)), e);
+            l_insertar(*(nuevaTabla + bucket), l_fin(*(nuevaTabla+bucket)), e);
             pos = l_siguiente(lista, pos);
         }
-
+        //liberamos la memoria de las listas anteriores
         lista->siguiente = NULL;
         lista->elemento = NULL;
         lista = NULL;
         free(lista);
     }
 
-    m->tabla_hash = nueva;
+    m->tabla_hash = nuevaTabla;
 }
 
 /**
@@ -40,8 +63,7 @@ void rehash(tMapeo m) {
  Finaliza indicando MAP_ERROR_MEMORIA si no es posible reservar memoria correspondientemente.
 **/
 void crear_mapeo(tMapeo *m, int ci, int (*fHash)(void *), int (*fComparacion)(void *, void *)) {
-    //printf("------MALLOC-CREAR-MAPEO------- \n");
-    (*m) = (tMapeo) malloc(sizeof(struct entrada));
+    (*m) = (tMapeo) malloc(sizeof(struct mapeo));
 
     if (*m == NULL)
         exit(MAP_ERROR_MEMORIA);
@@ -55,20 +77,23 @@ void crear_mapeo(tMapeo *m, int ci, int (*fHash)(void *), int (*fComparacion)(vo
     (*m)->hash_code = fHash;
     (*m)->comparador = fComparacion;
 
-    (*m)->tabla_hash = malloc((*m)->longitud_tabla * sizeof(tLista));
+    (*m)->tabla_hash = malloc((*m)->longitud_tabla * sizeof(struct celda));
 
     for (int i =0; i < (*m)->longitud_tabla; i++)
         crear_lista((*m)->tabla_hash + i);
 }
 
 /**
- Inserta una entrada con clave C y valor V, en M.
- Si una entrada con clave C y valor Vi ya existe en M, modifica Vi por V.
- Retorna NULL si la clave C no exist�a en M, o Vi en caso contrario.
- Finaliza indicando MAP_ERROR_MEMORIA si no es posible reservar memoria correspondientemente.
-**/
+ * Inserta una entrada con clave y valor en el mapeo, si ya existe una entrada con esa clave entonces reemplaza su
+ * valor y devuelve el valor antiguo, sino retorna null
+ * @param m El mapeo
+ * @param c Una clave a insertar
+ * @param v Un valor a insertar
+ * @return El valor antiguo de la entrada, si no habia entrada con esa clave retorna null
+ */
 tValor m_insertar(tMapeo m, tClave c, tValor v) {
     tValor toret = NULL;
+    tEntrada entrada;
     int bucket = (m->hash_code(c)) % (m->longitud_tabla);
     int find = 0;
 
@@ -77,9 +102,7 @@ tValor m_insertar(tMapeo m, tClave c, tValor v) {
     tPosicion pos_fin = l_fin(lista);
 
     while(pos != pos_fin && !find) {
-        tEntrada entrada = (tEntrada) l_recuperar(lista, pos);
-        int * clave = entrada->clave;
-        int * valor = entrada->valor;
+        entrada = (tEntrada) l_recuperar(lista, pos);
 
         //si las claves son iguales
         if (m->comparador(c, entrada->clave) == 0) {
@@ -91,53 +114,47 @@ tValor m_insertar(tMapeo m, tClave c, tValor v) {
     }
 
     if (!find) {
-        if ((m->cantidad_elementos + 1.0 ) / m->longitud_tabla >= 0.75) {
-            printf("RESIZE \n");
-            rehash(m);
-            bucket = m->hash_code(c) % m->longitud_tabla;
-            lista = *(m->tabla_hash + bucket);
-        }
-
-        tEntrada entrada = (tEntrada) malloc(sizeof(struct entrada));
+        entrada = (tEntrada) malloc(sizeof(struct entrada));
         if (entrada == NULL)
             exit(MAP_ERROR_MEMORIA);
 
         entrada->clave = c;
         entrada->valor = v;
 
-        //printf("adding: [%i][%i] en bucket %i \n", *((int* ) c), *((int*) v), bucket);
-
         l_insertar(lista, l_fin(lista), entrada);
-
         m->cantidad_elementos++;
+
+        if ((float) (m->cantidad_elementos) / m->longitud_tabla >= 0.75)
+            rehash(m);
     }
 
     return toret;
 }
 
-void m_eliminar_entrada_aux(tElemento entrada) {
-    entrada = NULL;
-    free(entrada);
-}
-
 /**
- Elimina la entrada con clave C en M, si esta existe.
- La clave y el valor de la entrada son eliminados mediante las funciones fEliminarC y fEliminarV.
-**/
+ * Dada una clave elimina la entrada que lo contenga
+ * @param m El mapeo
+ * @param c La clave de la entrada a eliminar
+ * @param fEliminarC La función escpecífica para eliminar claves
+ * @param fEliminarV La función escpecífica para eliminar valores
+ */
 void m_eliminar(tMapeo m, tClave c, void (*fEliminarC)(void *), void (*fEliminarV)(void *)) {
+    if (c == NULL)
+        exit(MAP_ERROR_MEMORIA);
+
     int bucket = m->hash_code(c) % m->longitud_tabla;
-    tLista lista = *(m->tabla_hash + bucket);
     int find = 0;
+    tLista lista = *(m->tabla_hash + bucket);
     tPosicion pos = l_primera(lista);
+
+    //seteo los eliminar clave y valor globales a los que me pasan por parametro
+    fEliminar_clave_global = fEliminarC;
+    fEliminar_valor_global = fEliminarV;
+
     while(pos != l_fin(lista) && !find) {
         tEntrada e = (tEntrada) l_recuperar(lista, pos);
         if (m->comparador(c, e->clave) == 0) {
-            fEliminarC(e->clave);
-            fEliminarV(e->valor);
-            int * clave = e->clave;
-            int * valor = e->valor;
-            printf("removing: [%i , %i] \n", *clave, *valor);
-            l_eliminar(lista, pos, m_eliminar_entrada_aux);
+            l_eliminar(lista, pos, &fEliminar_entrada);
             m->cantidad_elementos--;
             find = 1;
         } else
@@ -146,40 +163,34 @@ void m_eliminar(tMapeo m, tClave c, void (*fEliminarC)(void *), void (*fEliminar
 }
 
 /**
- Destruye el mapeo M, elimininando cada una de sus entradas.
- Las claves y valores almacenados en las entradas son eliminados mediante las funciones fEliminarC y fEliminarV.
-**/
+ * Destruye el mapeo eliminando todas sus entradas
+ * @param m El mapeo
+ * @param fEliminarC La función escpecífica para eliminar claves
+ * @param fEliminarV La función escpecífica para eliminar valores
+ */
 void m_destruir(tMapeo * m, void (*fEliminarC)(void *), void (*fEliminarV)(void *)) {
-    for (int i = 0; i < (*m)->longitud_tabla; i++) {
-        tLista lista = *((*m)->tabla_hash + i);
-        tPosicion pos = l_primera(lista);
-        int final = 0;
+    //seteo los eliminar clave y valor globales a los que me pasan por parametro
+    fEliminar_clave_global = fEliminarC;
+    fEliminar_valor_global = fEliminarV;
 
-        while(final == 0 && pos != l_fin(lista)) {
-            tEntrada entrada = (tEntrada) l_recuperar(lista, pos);
-            int * clave = entrada->clave;
-            int * valor = entrada->valor;
+    int longitud = (*m)->longitud_tabla;
+    tLista lista;
 
-            fEliminarC(entrada->clave);
-            fEliminarV(entrada->valor);
-            l_eliminar(lista, pos, m_eliminar_entrada_aux);
-
-            (*m)->cantidad_elementos--;
-            if (pos == l_fin(lista))
-                final = 1;
-        }
-        lista->siguiente = NULL;
-        lista->elemento = NULL;
-        lista = NULL;
+    for (int i = 0; i < longitud; i++) {
+        lista = (tLista) *((*m)->tabla_hash+i);
+        l_destruir(&lista, &fEliminar_entrada);
         free(lista);
-        //printf("------FREE-DESTRUIR-LISTA-EN-MAPEO------- \n");
     }
+    free(*m);
+    (*m) = NULL;
 }
 
 /**
- Recupera el valor correspondiente a la entrada con clave C en M, si esta existe.
- Retorna el valor correspondiente, o NULL en caso contrario.
-**/
+ * Dada una clave, devuelve el valor asociado a la misma
+ * @param m El mapeo
+ * @param c La clave
+ * @return El valor asociado a la clave
+ */
 tValor m_recuperar(tMapeo m, tClave c) {
     int bucket = m->hash_code(c) % m->longitud_tabla;
     tValor toret = NULL;

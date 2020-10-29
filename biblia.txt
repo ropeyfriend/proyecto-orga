@@ -1,0 +1,3 @@
+Saber el numero de palabras o caracteres de un documento puede ser muy util. Como ejemplo, si se le pide 
+a un autor un minimo o un maximo de palabras permitidas para escribir, el contador de palabras 
+lo ayudara a saber si su articulo cumple con los requisitos.
