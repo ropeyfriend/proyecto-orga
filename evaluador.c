@@ -2,8 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h> //pasa string a lowercase
-#include "lista.h"
-#include "mapeo.h"
+//#include "lista.h"
+//#include "mapeo.h"
+#include "lista.c"
+#include "mapeo.c"
 
 #define ERROR_ARCHIVO -1
 #define ERROR_INVOCACION -2
@@ -40,16 +42,27 @@ int fComparador(void * a, void * b) {
   return toret;
 }
 
+/**
+ * Dada una clave la elimina
+ * @param c La clave a eliminar
+ */
 void fEliminarC(tClave c) {
     c = NULL;
     free(c);
 }
-
+/**
+ * Dado un valor lo elimina
+ * @param v El valor a eliminar
+ */
 void fEliminarV(tValor v) {
     v = NULL;
     free(v);
 }
 
+/**
+ * Muestra la tabla hash del mapeo con sus respectivas entradas [c:c1,v:v1], cuando temrina la lista muestra | -eolist
+ * @param m El mapeo a mostrar
+ */
 void mostrarMapeo(tMapeo m) {
 
     for (int bucket = 0; bucket < m->longitud_tabla; bucket++) {
@@ -67,6 +80,15 @@ void mostrarMapeo(tMapeo m) {
     }
 }
 
+/**
+ * Dado un mapeo y el nombre de un archivo de texto, selecciona todas las palabras del mapeo y genera entradas, donde:
+ * las claves son las palabras y los valores la cantidad de apariciones de la misma en el archivo de texto
+ *
+ * Si el nombre del archivo no pertenece a un archivo existente en el directorio del ejecutable retorna un error (-1)
+ *
+ * @param m El mapeo a operar
+ * @param file El archivo donde se tomarán las palabras
+ */
 void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
    FILE *archivo = fopen(file,"r");
    if (archivo == NULL) {
@@ -107,6 +129,12 @@ void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
    fclose(archivo);
 }
 
+/**
+ * Dado un mapeo de String|Entero y un String, devuelve el valor de la entrada
+ * @param m El mapeo
+ * @param palabra El string palabra
+ * @return Un entero que representa el valor de la entrada
+ */
 int cantApariciones(tMapeo m, char * palabra) {
     int toret = 0;
     tValor valor = m_recuperar(m, palabra);
@@ -115,11 +143,21 @@ int cantApariciones(tMapeo m, char * palabra) {
     return toret;
 }
 
-int evaluador(char *path) {
+/**
+ * Dado el nombre de un archivo, inicializa un mapeo con entradas palabra|cantidad de apariciones. Luego puede recibir
+ * un numero (1) o (2) por consola para realizar las siguientes acciones:
+ *  (1) Solicita una palabra y devuelve la cantidad de apariciones de esa palabra en el archivo de texto
+ *  (2) Salir del programa
+ *
+ *  Si la opción ingresada por el usuario es invalida, termina la ejecución con el código de error (-2)
+ *
+ * @param path La ruta de un archivo de texto
+ */
+void evaluador(char *path) {
     tMapeo m;
     crear_mapeo(&m,10, fHash, fComparador);
     cargarPalabrasEnMapeo(m, path);
-    mostrarMapeo(m);
+    //mostrarMapeo(m);
     int opcion = 0;
     char * palabra;
 
@@ -146,9 +184,14 @@ int evaluador(char *path) {
     printf("\n");
     //mostrarMapeo(m);
     m_destruir(&m, &fEliminarC, &fEliminarV); //liberamos la memoria cuando salimos
-    return 0;
 }
 
+/**
+ * Ejecuta la función evaluador que inicializa el programa. Recibe por comando el nombre de un archivo de texto
+ * @param args
+ * @param path
+ * @return
+ */
 int main(int args, char **path) {
     evaluador(*(path+1));
     return 0;
