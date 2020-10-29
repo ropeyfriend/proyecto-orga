@@ -8,6 +8,11 @@
 #define ERROR_ARCHIVO -1
 #define ERROR_INVOCACION -2
 
+/**
+ * Dado un puntero a un caracter (String) devuelve un entero a partir de la suma de sus valores ASCII
+ * @param p Un puntero a un caracter
+ * @return Un entero
+ */
 int fHash(void * p) {
     char * palabra = (char *) p;
     int letraAscii;
@@ -21,6 +26,13 @@ int fHash(void * p) {
     return sumaAscii;
 }
 
+/**
+ * Compara dos punteros a caracteres (Strings) a y b,
+ * y retorna un entero < 0 si a < b, un entero > 0 si a > b y retorna 0 si a = b
+ * @param a Un puntero a un caracter
+ * @param b Un puntero a un caracter
+ * @return Un entero
+ */
 int fComparador(void * a, void * b) {
   char *string1 = a;
   char *string2 = b;
@@ -38,12 +50,7 @@ void fEliminarV(tValor v) {
     free(v);
 }
 
-void fEliminarEntero(void * entero) {
-    entero = NULL;
-    free(entero);
-}
-
-void mostrarBuckets(tMapeo m) {
+void mostrarMapeo(tMapeo m) {
 
     for (int bucket = 0; bucket < m->longitud_tabla; bucket++) {
         tLista lista = *(m->tabla_hash + bucket);
@@ -63,7 +70,7 @@ void mostrarBuckets(tMapeo m) {
 void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
    FILE *archivo = fopen(file,"r");
    if (archivo == NULL) {
-       printf("El archivo no se pudo abrir correctamente \n");
+       printf("Error (-1): El archivo no se pudo abrir correctamente \n");
        exit(ERROR_ARCHIVO);
    }
 
@@ -78,7 +85,7 @@ void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
 
        while(palabras_separadas != NULL) {
            char * palabra;
-           palabra = strdup(palabras_separadas); //hace malloc?
+           palabra = strdup(palabras_separadas);
            valor = m_recuperar(m, palabra);
 
            for(int i = 0; palabra[i]; i++){
@@ -112,7 +119,7 @@ int evaluador(char *path) {
     tMapeo m;
     crear_mapeo(&m,10, fHash, fComparador);
     cargarPalabrasEnMapeo(m, path);
-    //mostrarBuckets(m);
+    //mostrarMapeo(m);
     int opcion = 0;
     char * palabra;
 
@@ -122,8 +129,10 @@ int evaluador(char *path) {
         printf("(2) Salir \n");
 
         scanf("%i", &opcion);
-        if (opcion != 1 && opcion != 2)
+        if (opcion != 1 && opcion != 2) {
+            printf("Error (-2): opcion erronea \n");
             exit(ERROR_INVOCACION);
+        }
         if(opcion == 1) {
             printf("Ingresar palabra ");
             palabra = (char *) malloc(30);
@@ -134,7 +143,8 @@ int evaluador(char *path) {
         }
 
     }
-    //mostrarBuckets(m);
+    printf("\n");
+    //mostrarMapeo(m);
     m_destruir(&m, &fEliminarC, &fEliminarV); //liberamos la memoria cuando salimos
     return 0;
 }
