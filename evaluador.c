@@ -125,10 +125,10 @@ int evaluador(char *path) {
         if (opcion != 1 && opcion != 2)
             exit(ERROR_INVOCACION);
         if(opcion == 1) {
-            printf("Ingresar palabra \n");
+            printf("Ingresar palabra ");
             palabra = (char *) malloc(30);
             scanf("%s",palabra);
-            printf("La palabra '%s' se encuentra %i veces en el archivo \n", palabra, cantApariciones(m, palabra));
+            printf("\nLa palabra '%s' se encuentra %i veces en el archivo \n", palabra, cantApariciones(m, palabra));
             free(palabra);
             fflush(stdin);
         }
