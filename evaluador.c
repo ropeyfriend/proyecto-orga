@@ -119,7 +119,7 @@ int evaluador(char *path) {
     tMapeo m;
     crear_mapeo(&m,10, fHash, fComparador);
     cargarPalabrasEnMapeo(m, path);
-    //mostrarMapeo(m);
+    mostrarMapeo(m);
     int opcion = 0;
     char * palabra;
 

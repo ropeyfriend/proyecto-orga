@@ -7,6 +7,7 @@
 //Prototipos de funciones globales
 void (*fEliminar_clave_global)(void *);
 void (*fEliminar_valor_global)(void *);
+void fNoEliminar(void * p) {}
 
 /**
  * Dada una entrada elimina sus claves y valores haciendo uso de las funciones específicas para eliminarlos
@@ -46,13 +47,14 @@ void rehash(tMapeo m) {
             pos = l_siguiente(lista, pos);
         }
         //liberamos la memoria de las listas anteriores
-        lista->siguiente = NULL;
-        lista->elemento = NULL;
-        lista = NULL;
-        free(lista);
+        //printf("l_destruir() \n");
+        //printf("longitud de la lista: %i \n", l_longitud(lista));
+        l_destruir(&lista, &fNoEliminar);
     }
 
+    free(m->tabla_hash);
     m->tabla_hash = nuevaTabla;
+    printf("finish rehash \n");
 }
 
 /**
