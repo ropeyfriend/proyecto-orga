@@ -18,9 +18,9 @@ void fEliminar_entrada(tElemento entrada) {
 
     fEliminar_clave_global(e->clave);
     fEliminar_valor_global(e->valor);
-
-    entrada = NULL;
+    
     free(entrada);
+    entrada = NULL;
 }
 
 /**
@@ -46,15 +46,11 @@ void rehash(tMapeo m) {
             l_insertar(*(nuevaTabla + bucket), l_fin(*(nuevaTabla+bucket)), e);
             pos = l_siguiente(lista, pos);
         }
-        //liberamos la memoria de las listas anteriores
-        //printf("l_destruir() \n");
-        //printf("longitud de la lista: %i \n", l_longitud(lista));
         l_destruir(&lista, &fNoEliminar);
     }
 
     free(m->tabla_hash);
     m->tabla_hash = nuevaTabla;
-    printf("finish rehash \n");
 }
 
 /**
@@ -181,9 +177,21 @@ void m_destruir(tMapeo * m, void (*fEliminarC)(void *), void (*fEliminarV)(void 
     for (int i = 0; i < longitud; i++) {
         lista = (tLista) *((*m)->tabla_hash+i);
         l_destruir(&lista, &fEliminar_entrada);
-        free(lista);
     }
-    free(*m);
+    
+    //Invalidar campos simples del mapeo
+    (*m)-> cant_elementos = 0;
+    (*m)->comparador = NULL;
+    (*m)->longitud_tabla = 0;
+
+    //Liberar espacios de los campos del tipo struct dentro del mapeo
+    free((*m)->tabla_hash);
+    (*m)->tabla_hash = NULL;
+
+    //Liberar espacio del struct mapeo
+    free((*m));
+
+    //Modificar la variable
     (*m) = NULL;
 }
 
