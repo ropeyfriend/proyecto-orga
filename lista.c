@@ -54,8 +54,9 @@ void l_eliminar(tLista l, tPosicion p, void (*fEliminar)(tElemento)) {
 
     posEliminar->siguiente = NULL;
     posEliminar->elemento = NULL;
-    posEliminar = NULL;
+    
     free(posEliminar);
+    posEliminar = NULL;
 }
 
 /**

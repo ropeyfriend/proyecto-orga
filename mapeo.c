@@ -31,19 +31,26 @@ void rehash(tMapeo m) {
     int longitud_vieja = (int) m->longitud_tabla;
     m->longitud_tabla = (int) m->longitud_tabla * 2; //actualizo el valor
     tLista lista;
+    tPosicion pos, fin;
+    int bucket;
+    tEntrada e;
 
-    tLista * nuevaTabla = malloc(m->longitud_tabla * sizeof(struct celda));
+    tLista * nuevaTabla = malloc(m->longitud_tabla * sizeof(tLista));
+    if (*nuevaTabla == NULL)
+        exit(MAP_ERROR_MEMORIA);
+
     for(int i = 0; i < m->longitud_tabla; i++) {
         crear_lista(nuevaTabla + i);
     }
 
     for(int i = 0; i < longitud_vieja; i++) {
         lista = *(m->tabla_hash + i);
-        tPosicion pos = l_primera(lista);
-        while(pos != l_fin(lista)) {
-            tEntrada e = (tEntrada) l_recuperar(lista, pos);
-            int bucket = m->hash_code(e->clave) % m->longitud_tabla;
-            l_insertar(*(nuevaTabla + bucket), l_fin(*(nuevaTabla+bucket)), e);
+        pos = l_primera(lista);
+        fin = l_fin(lista);
+        while(pos != fin) {
+            e = (tEntrada) l_recuperar(lista, pos);
+            bucket = m->hash_code(e->clave) % m->longitud_tabla;
+            l_insertar(*(nuevaTabla + bucket), l_primera(*(nuevaTabla+bucket)), e);
             pos = l_siguiente(lista, pos);
         }
         l_destruir(&lista, &fNoEliminar);
@@ -62,7 +69,6 @@ void rehash(tMapeo m) {
 **/
 void crear_mapeo(tMapeo *m, int ci, int (*fHash)(void *), int (*fComparacion)(void *, void *)) {
     (*m) = (tMapeo) malloc(sizeof(struct mapeo));
-
     if (*m == NULL)
         exit(MAP_ERROR_MEMORIA);
 
@@ -75,8 +81,9 @@ void crear_mapeo(tMapeo *m, int ci, int (*fHash)(void *), int (*fComparacion)(vo
     (*m)->hash_code = fHash;
     (*m)->comparador = fComparacion;
 
-    (*m)->tabla_hash = malloc((*m)->longitud_tabla * sizeof(struct celda));
-
+    (*m)->tabla_hash = malloc((*m)->longitud_tabla * sizeof(tLista));
+    if(*(*m)->tabla_hash == NULL)
+        exit(MAP_ERROR_MEMORIA);
     for (int i =0; i < (*m)->longitud_tabla; i++)
         crear_lista((*m)->tabla_hash + i);
 }
@@ -97,9 +104,9 @@ tValor m_insertar(tMapeo m, tClave c, tValor v) {
 
     tLista lista = *(m->tabla_hash + bucket);
     tPosicion pos = l_primera(lista);
-    tPosicion pos_fin = l_fin(lista);
+    tPosicion fin = l_fin(lista);
 
-    while(pos != pos_fin && !find) {
+    while(pos != fin && !find) {
         entrada = (tEntrada) l_recuperar(lista, pos);
 
         //si las claves son iguales
@@ -119,7 +126,7 @@ tValor m_insertar(tMapeo m, tClave c, tValor v) {
         entrada->clave = c;
         entrada->valor = v;
 
-        l_insertar(lista, l_fin(lista), entrada);
+        l_insertar(lista, l_primera(lista), entrada);
         m->cantidad_elementos++;
 
         if ((float) (m->cantidad_elementos) / m->longitud_tabla >= 0.75)
@@ -144,13 +151,15 @@ void m_eliminar(tMapeo m, tClave c, void (*fEliminarC)(void *), void (*fEliminar
     int find = 0;
     tLista lista = *(m->tabla_hash + bucket);
     tPosicion pos = l_primera(lista);
+    tPosicion fin = l_fin(lista);
+    tEntrada e;
 
     //seteo los eliminar clave y valor globales a los que me pasan por parametro
     fEliminar_clave_global = fEliminarC;
     fEliminar_valor_global = fEliminarV;
 
-    while(pos != l_fin(lista) && !find) {
-        tEntrada e = (tEntrada) l_recuperar(lista, pos);
+    while(pos != fin && !find) {
+        e = (tEntrada) l_recuperar(lista, pos);
         if (m->comparador(c, e->clave) == 0) {
             l_eliminar(lista, pos, &fEliminar_entrada);
             m->cantidad_elementos--;
@@ -167,12 +176,12 @@ void m_eliminar(tMapeo m, tClave c, void (*fEliminarC)(void *), void (*fEliminar
  * @param fEliminarV La función escpecífica para eliminar valores
  */
 void m_destruir(tMapeo * m, void (*fEliminarC)(void *), void (*fEliminarV)(void *)) {
+    int longitud = (*m)->longitud_tabla;
+    tLista lista;
+
     //seteo los eliminar clave y valor globales a los que me pasan por parametro
     fEliminar_clave_global = fEliminarC;
     fEliminar_valor_global = fEliminarV;
-
-    int longitud = (*m)->longitud_tabla;
-    tLista lista;
 
     for (int i = 0; i < longitud; i++) {
         lista = (tLista) *((*m)->tabla_hash+i);
@@ -180,7 +189,7 @@ void m_destruir(tMapeo * m, void (*fEliminarC)(void *), void (*fEliminarV)(void 
     }
     
     //Invalidar campos simples del mapeo
-    (*m)-> cant_elementos = 0;
+    (*m)-> cantidad_elementos = 0;
     (*m)->comparador = NULL;
     (*m)->longitud_tabla = 0;
 
@@ -205,12 +214,14 @@ tValor m_recuperar(tMapeo m, tClave c) {
     int bucket = m->hash_code(c) % m->longitud_tabla;
     tValor toret = NULL;
     int find = 0;
+    tEntrada e;
 
     tLista lista = *(m->tabla_hash+bucket);
     tPosicion pos = l_primera(lista);
+    tPosicion fin = l_fin(lista);
 
-    while(pos != l_fin(lista) && !find) {
-        tEntrada e = (tEntrada) l_recuperar(lista, pos);
+    while(pos != fin && !find) {
+        e = (tEntrada) l_recuperar(lista, pos);
         if (m->comparador(c, e->clave) == 0) {
             toret = e->valor;
             find = 1;

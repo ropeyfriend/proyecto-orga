@@ -2,10 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h> //pasa string a lowercase
-//#include "lista.h"
-//#include "mapeo.h"
-#include "lista.c"
-#include "mapeo.c"
+#include "lista.h"
+#include "mapeo.h"
 
 #define ERROR_ARCHIVO -1
 #define ERROR_INVOCACION -2
@@ -47,38 +45,19 @@ int fComparador(void * a, void * b) {
  * @param c La clave a eliminar
  */
 void fEliminarC(tClave c) {
-    c = NULL;
     free(c);
+    c = NULL;
 }
 /**
  * Dado un valor lo elimina
  * @param v El valor a eliminar
  */
 void fEliminarV(tValor v) {
-    v = NULL;
     free(v);
+    v = NULL;
 }
 
-/**
- * Muestra la tabla hash del mapeo con sus respectivas entradas [c:c1,v:v1], cuando temrina la lista muestra | -eolist
- * @param m El mapeo a mostrar
- */
-void mostrarMapeo(tMapeo m) {
 
-    for (int bucket = 0; bucket < m->longitud_tabla; bucket++) {
-        tLista lista = *(m->tabla_hash + bucket);
-        tPosicion pos = l_primera(lista);
-        while (pos != l_fin(lista)) {
-            tEntrada e = (tEntrada) l_recuperar(lista, pos);
-            char * c = (e)->clave;
-            int * v = (int *) (e)->valor;
-            printf("[c:%s v:%i] | ", c, *v);
-
-            pos = l_siguiente(lista, pos);
-        }
-        printf("-eolist \n");
-    }
-}
 
 /**
  * Dado un mapeo y el nombre de un archivo de texto, selecciona todas las palabras del mapeo y genera entradas, donde:
@@ -97,16 +76,19 @@ void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
    }
 
    char buffer[100];
+   //char * buffer = "";
+
    char delimitadores[] = " ,.¿?¡!\n\0";
    char * palabras_separadas;
    int * valor;
    char * linea = fgets(buffer, 100, archivo);
+   char * palabra;
+   int * nuevo_valor;
 
    while (linea != NULL) {
        palabras_separadas = strtok(linea, delimitadores);
 
        while(palabras_separadas != NULL) {
-           char * palabra;
            palabra = strdup(palabras_separadas);
            valor = m_recuperar(m, palabra);
 
@@ -115,7 +97,7 @@ void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
            }
 
            if (valor == NULL) {
-               int * nuevo_valor = malloc(sizeof(int));
+               nuevo_valor = malloc(sizeof(int));
                *nuevo_valor = 1;
                m_insertar(m, palabra, nuevo_valor);
            } else {
@@ -123,6 +105,7 @@ void cargarPalabrasEnMapeo(tMapeo m, char file[]) {
            }
            palabras_separadas = strtok(NULL, delimitadores);
        }
+
        linea = fgets(buffer, 100, archivo);
    }
 
@@ -157,7 +140,6 @@ void evaluador(char *path) {
     tMapeo m;
     crear_mapeo(&m,10, fHash, fComparador);
     cargarPalabrasEnMapeo(m, path);
-    //mostrarMapeo(m);
     int opcion = 0;
     char * palabra;
 
@@ -182,9 +164,9 @@ void evaluador(char *path) {
 
     }
     printf("\n");
-    //mostrarMapeo(m);
     m_destruir(&m, &fEliminarC, &fEliminarV); //liberamos la memoria cuando salimos
 }
+
 
 /**
  * Ejecuta la función evaluador que inicializa el programa. Recibe por comando el nombre de un archivo de texto

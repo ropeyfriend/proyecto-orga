@@ -1,3 +1,24 @@
+/**
+ * Muestra la tabla hash del mapeo con sus respectivas entradas [c:c1,v:v1], cuando temrina la lista muestra | -eolist
+ * @param m El mapeo a mostrar
+ */
+void mostrarMapeo(tMapeo m) {
+
+    for (int bucket = 0; bucket < m->longitud_tabla; bucket++) {
+        tLista lista = *(m->tabla_hash + bucket);
+        tPosicion pos = l_primera(lista);
+        while (pos != l_fin(lista)) {
+            tEntrada e = (tEntrada) l_recuperar(lista, pos);
+            char * c = (e)->clave;
+            int * v = (int *) (e)->valor;
+            printf("[c:%s v:%i] | ", c, *v);
+
+            pos = l_siguiente(lista, pos);
+        }
+        printf("-eolist \n");
+    }
+}
+
 void map_test() {
     tMapeo map;
     crear_mapeo(&map, 10, fHash, fComparador);
